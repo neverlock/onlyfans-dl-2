@@ -3,6 +3,7 @@
 import os
 import sys
 import json
+import tqdm
 import shutil
 import pathlib
 import requests
@@ -15,10 +16,10 @@ requests.urllib3.disable_warnings()
 ######################
 
 #Session Variables (update every time you login or your browser updates)
-USER_ID = ""
-USER_AGENT = ""
-X_BC = ""
-SESS_COOKIE = ""
+USER_ID = "83218055"
+USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
+X_BC = "c2d6688bcbeb50a0afd91271e0185b460192145d"
+SESS_COOKIE = "jnc24mmrdi6krklihs8l5k1jeb"
 
 #Options
 ALBUMS = True # Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
@@ -177,11 +178,20 @@ def download_media(media, subtype, postdate, album = ''):
 			print(r.url + ' :: ' + str(r.status_code))
 			return
 		# Writing to a temp file while downloading, so if we interrupt
-		# a file, we will not skip it but re-download it at next time.
-		with open(PROFILE + path + '.part', 'wb') as f:
-			r.raw.decode_content = True
-			shutil.copyfileobj(r.raw, f)
-		r.close()
+			# a file, we will not skip it but re-download it at next time.
+		total_size = int(requests.head(source, verify=False).headers.get('content-length', 0))
+		progress_bar = tqdm.tqdm(total=total_size, unit='B', unit_scale=True, desc=f"Downloading {filename + ext}", leave=False)
+		try:
+			with open(PROFILE + path + '.part', 'wb') as f:
+				r = requests.get(source, stream=True, timeout=(4, None), verify=False)
+				for chunk in r.iter_content(chunk_size=1024):
+					f.write(chunk)
+					progress_bar.update(len(chunk))
+				r.close()
+		except:
+			print('Error getting: ' + source + ' (skipping)')
+			return
+		progress_bar.close()
 		# Downloading finished, remove temp file.
 		shutil.move(PROFILE + path + '.part', PROFILE + path)
 
@@ -195,7 +205,8 @@ def get_content(MEDIATYPE, API_LOCATION):
 		posts = posts['list']
 	if len(posts) > 0:
 		print("Found " + str(len(posts)) + " " + MEDIATYPE)
-		for post in posts:
+		#for post in posts:
+		for idx, post in enumerate(posts):
 			if "media" not in post or ("canViewMedia" in post and not post["canViewMedia"]):
 				continue
 			if MEDIATYPE == "purchased" and ('fromUser' not in post or post["fromUser"]["username"] != PROFILE):
@@ -215,6 +226,7 @@ def get_content(MEDIATYPE, API_LOCATION):
 					postdate = str(media["createdAt"][:10])
 				if "source" in media and "source" in media["source"] and media["source"]["source"] and ("canView" not in media or media["canView"]) or "files" in media:
 					download_media(media, MEDIATYPE, postdate, album)
+			print(f"Processed post {idx + 1} of {len(posts)}")
 		global new_files
 		print("Downloaded " + str(new_files) + " new " + MEDIATYPE)
 		new_files = 0
