@@ -16,10 +16,10 @@ requests.urllib3.disable_warnings()
 ######################
 
 #Session Variables (update every time you login or your browser updates)
-USER_ID = "83218055"
-USER_AGENT = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36"
-X_BC = "c2d6688bcbeb50a0afd91271e0185b460192145d"
-SESS_COOKIE = "jnc24mmrdi6krklihs8l5k1jeb"
+USER_ID = ""
+USER_AGENT = ""
+X_BC = ""
+SESS_COOKIE = ""
 
 #Options
 ALBUMS = True # Separate photos into subdirectories by post/album (Single photo posts are not put into subdirectories)
